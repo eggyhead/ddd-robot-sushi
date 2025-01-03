@@ -1,0 +1,75 @@
+/**
+ * A RequestStatus is a value object that is used to represent
+ * the current status of an insurance quote request.
+ * 
+ * The following diagram shows the possible state transitions:
+ * 
+ * <pre>
+ * 
+ *                                               │
+ *                                               ▼
+ *                                        ┌────────────┐
+ *                                        │  ORDER     │
+ *                                        │ SUBMITTED  │
+ *                                        └────────────┘
+ *                                               │
+ *                             ┌─────────────────┴────────────────┐
+ *                             │                                  │
+ *                             ▼                                  ▼
+ *                      ┌────────────┐                     ╔════════════╗
+ *                      │   ORDER    │                     ║  ORDER     ║
+ *                      │  RECEIVED  │                     ║  REJECTED  ║
+ *                      └────────────┘                     ╚════════════╝
+ *                             │                   
+ *                             │                   
+ *                             ▼                   
+ *                      ┌────────────┐      
+ *                      │   ORDER    │      
+ *                      │  ACCEPTED  │
+ *                      └────────────┘     
+ *                             │
+ *                             │
+ *                             ▼
+ *                      ╔════════════╗
+ *                      ║  ORDER     ║
+ *                      ║  CREATED   ║
+ *                      ╚════════════╝
+ * 
+ * </pre>
+ */
+
+BoundedContext Ordering {
+	Application {
+		Command SubmitOrder
+		Flow OrderRequestFlow {
+			command SubmitOrder delegates to OrderRequest[-> SUBMITTED] emits event OrderSubmitted
+			event OrderSubmitted triggers operation checkOrder
+			operation checkOrder delegates to OrderRequest[SUBMITTED -> RECEIVED X REJECTED] emits event OrderReceived X OrderRejected
+			event OrderReceived triggers operation receiveOrder
+			operation receiveOrder delegates to OrderRequest[RECEIVED -> ACCEPTED] emits event OrderAccepted
+			event OrderAccepted triggers operation accept
+			operation accept delegates to OrderRequest[ACCEPTED -> ORDER_CREATED] emits event OrderCreated
+		}
+	}
+
+	Aggregate OrderRequest {
+		Entity Order {
+			aggregateRoot
+		}
+		enum OrderState {
+			aggregateLifecycle
+ 			SUBMITTED, RECEIVED, REJECTED, ACCEPTED, ORDER_CREATED
+		}
+		DomainEvent OrderSubmitted
+		DomainEvent OrderReceived
+		DomainEvent OrderRejected
+		DomainEvent OrderAccepted
+		DomainEvent OrderCreated
+		Service OrderRequestService {
+			void checkOrder(@Order order);
+			void receiveOrder(@Order order);
+			void reject(@Order order);
+			void accept(@Order order);
+		}
+	}
+}

@@ -1,0 +1,22 @@
+Ordering Application:
+
+// OrderRequest [ -> SUBMITTED]
+service SubmitOrder
+(OrderSubmitted)
+// OrderRequest [SUBMITTED -> RECEIVED X REJECTED]
+service checkOrder
+(OrderReceived)
+// OrderRequest [RECEIVED -> ACCEPTED]
+service receiveOrder
+(OrderAccepted)
+// OrderRequest [ACCEPTED -> ORDER_CREATED]
+service accept
+(OrderCreated)
+
+// OrderRequest [ -> SUBMITTED]
+service SubmitOrder
+(OrderSubmitted)
+// OrderRequest [SUBMITTED -> RECEIVED X REJECTED]
+service checkOrder
+(OrderRejected)
+

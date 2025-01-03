@@ -1,0 +1,141 @@
+/* Example Context Map written with 'ContextMapper DSL' */
+ContextMap InsuranceContextMap {
+	type = SYSTEM_LANDSCAPE
+	state = AS_IS
+	
+	/* Add bounded contexts to this context map: */
+	contains CustomerContext
+	contains ServerContext
+	contains ChefContext
+	contains PaymentProcessorContext
+	
+	/* Define the context relationships: */ 
+	CustomerContext Customer-Supplier ServerContext {
+		exposedAggregates Menu
+	}
+	
+	ServerContext <-> ChefContext
+	
+	PaymentProcessorContext -> ServerContext
+	
+	PaymentProcessorContext -> CustomerContext
+}
+
+/* Bounded Context Definitions */
+BoundedContext CustomerContext implements CustomerDomain {
+	type = FEATURE 
+	responsibilities = "Ordering, eating and paying for food from Menu"
+	Aggregate PaymentOptions {
+		Entity PaymentOptions {
+			- List<PaymentOption> options
+		}
+
+		enum PaymentType {
+			CREDIT_CARD, APPLE_PAY, CASH
+		}
+
+		Entity PaymentOption {
+			- PaymentType paymentType
+		}
+
+		Entity CreditCard extends PaymentOption {
+			int ccv 
+			int identifier 
+			Date expiration   
+		}
+
+		Entity Cash extends PaymentOption {
+			int amount 
+		}
+
+		Entity ApplePay extends PaymentOption {
+			long autheticationToken
+		}
+	}
+}
+
+BoundedContext ServerContext implements ServerDomain {
+	type = FEATURE 
+	responsibilities = "Taking and serving customer orders from Menu"
+	Aggregate Menu {
+		Entity Menu {
+			aggregateRoot
+			- List<MenuItem> menuItems
+		}
+
+		ValueObject MenuItemId {
+			int menuItemId key
+		}
+
+		Entity MenuItem {
+			- MenuItemId id 
+			String desc
+			- List<Ingredient> ingredients
+		}
+	}
+}
+
+BoundedContext ChefContext implements ChefDomain {
+	type = FEATURE 
+	responsibilities = "Making food from Menu"
+	Aggregate Recipes {
+		Entity Recipes {
+			- List<Recipe> recipes
+		}
+
+		ValueObject RecipeId {
+			int recipeId key
+		}
+
+		Entity Recipe {
+			- RecipeId id
+			- List<Ingredient> ingredients
+			- List<Instruction> instructions
+		}
+
+		ValueObject IngredientId {
+			int ingredientId key
+		}
+
+		Entity Ingredient {
+			- IngredientId id
+			String desc 
+			boolean isFresh
+		}
+
+		Entity Instruction {
+			int step 
+			String desc 
+			boolean isCompleted
+		}
+ 
+	}
+}
+
+BoundedContext PaymentProcessorContext implements PaymentProcessorDomain {
+	type = SYSTEM
+	responsibilities = "Processing payment"
+}
+
+/* Domain & Subdomain Definitions */
+Domain RestaurantDomain {
+	Subdomain CustomerDomain {
+		type = CORE_DOMAIN
+		domainVisionStatement = "Domain managing everything customer-related."
+	}
+	Subdomain ServerDomain {
+		type = CORE_DOMAIN
+		domainVisionStatement = "Domain managing the process of serving hungry sushi restaurant customers."
+	}
+	Subdomain ChefDomain {
+		type = CORE_DOMAIN
+		domainVisionStatement = "Domain managing the process of making food to serve at the the sushi restaurant."
+	}
+	Subdomain PaymentProcessorDomain {
+		type = SUPPORTING_DOMAIN
+		domainVisionStatement = "External service which processes payment for sushi restaurant purchases."
+	}
+}
+
+
+
